@@ -1,0 +1,177 @@
+#!/bin/bash
+
+# Please ensure no cf service running before testing
+
+#jobs:
+#  1.Create multiple instances for different services in parallel
+#  2.Delete multiple instances for different services in parallel
+
+tmp=~/.tmp
+#services_to_test="sqldb rediscache documentdb storageblob servicebus"
+services_to_test="sqldb documentdb storageblob servicebus"
+threads=1
+location=westus
+
+num_services=0
+for service in $services_to_test; do
+  let ++num_services
+done
+
+resourceGroupName=cloud-foundry-$(cat /proc/sys/kernel/random/uuid)
+echo resource group for test: $resourceGroupName
+
+function wait_tasks_done {
+  echo wait tasks done...
+  while true; do
+    stat=`cf services`
+    if [[ $stat != *FAILED* ]]; then
+      if [[ $stat != *progress* ]]; then
+        break
+      fi
+    fi
+    sleep 5
+  done
+}
+
+function make_config {
+  case "$1" in
+    sqldb)
+      config='{
+        "resourceGroup": "'$resourceGroupName'",
+        "location": "'$location'",
+        "sqlServerName": "sqlserver-'$(cat /proc/sys/kernel/random/uuid)'",
+        "sqlServerCreateIfNotExist": true,
+        "sqlServerParameters": {
+            "allowSqlServerFirewallRule": {
+                "ruleName": "new rule",
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "255.255.255.255"
+            },
+            "location": "'$location'",
+            "properties": {
+                "administratorLogin": "azureuser",
+                "administratorLoginPassword": "Password1234"
+            }
+        },
+        "sqldbName": "sqldb-'$(cat /proc/sys/kernel/random/uuid)'",
+        "sqldbParameters": {
+            "location": "'$location'",
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS"
+            }
+        }
+      }'
+      ;;
+    rediscache)
+      config='{
+        "resourceGroup": "'$resourceGroupName'",
+        "cacheName": "redis-'$(cat /proc/sys/kernel/random/uuid)'",
+        "parameters": {
+          "location": "'$location'",
+          "enableNonSslPort": false,
+          "sku": {
+            "name": "Basic",
+            "family": "C",
+            "capacity": 0
+          }
+        }
+      }'
+      ;;
+    documentdb)
+      config='{
+        "resourceGroup": "'$resourceGroupName'",
+        "docDbName": "docdb-'$(cat /proc/sys/kernel/random/uuid)'",
+        "parameters": {
+          "location": "'$location'"
+        }
+      }'
+      ;;
+    storageblob)
+      config='{
+        "resource_group_name": "'$resourceGroupName'",
+        "storage_account_name": "storage'$(cat /dev/urandom | tr -dc "a-z0-9" | fold -w 16 | head -n 1)'",
+        "container_name": "mycontainer",
+        "location": "'$location'",
+        "account_type": "Standard_LRS"
+      }' 
+      ;;
+    servicebus)
+      config='{
+        "resource_group_name": "'$resourceGroupName'",
+        "namespace_name": "servicebus-'$(cat /proc/sys/kernel/random/uuid)'",
+        "location": "'$location'",
+        "type": "Messaging",
+        "messaging_tier": "Standard"
+      }'
+      ;;
+    *)
+      ;;
+esac
+}
+
+function make_plan {
+  if [[ $1 == sqldb || $1 == rediscache ]]; then
+    plan="basic"
+  else
+    plan="standard"
+  fi
+}
+
+#create service instances
+rm $tmp
+i=0
+while [ $i -lt $threads ]; do
+  pids=""
+  for service in $services_to_test; do
+    {
+      make_config $service 
+      make_plan $service
+      result=`cf create-service azure-$service $plan $service$i -c "$config"`
+      if [[ $result == *OK* ]]; then
+        echo "OK" >>$tmp
+      else
+        echo ERR: $result
+      fi
+    } &
+    pids="$pids $!"
+  done
+  wait $pids
+  let ++i
+done
+
+create_requests=$(grep -o 'OK' <<< $(<$tmp) | wc -l)
+echo $create_requests/$threads*$num_services creating requests sent successfully.
+  
+wait_tasks_done
+succs=$(grep -o 'succeeded' <<< "$stat" | wc -l)
+echo $succs/$create_requests service instances created successfully.
+  
+#delete service instances
+rm $tmp
+i=0
+while [  $i -lt $threads ]; do
+  pids=""
+  for service in $services_to_test; do
+    {
+      result=`cf delete-service $service$i -f`
+      if [[ $result == *OK* ]]; then
+        if [[ $result != *exist* ]]; then
+          echo "OK" >>$tmp
+        fi
+      else
+        echo ERR: $result
+      fi
+    } &
+    pids="$pids $!"
+  done
+  wait $pids
+  let ++i
+done
+
+delete_requests=$(grep -o 'OK' <<< $(<$tmp) | wc -l)
+echo $delete_requests/$create_requests deleting requests sent successfully.
+
+wait_tasks_done
+  
+rm $tmp
+
