@@ -189,7 +189,7 @@ for service in $services_to_test; do
     {
       result=`cf delete-service $service$i/2 -f`
       if [[ $result == *OK* ]]; then
-        if [[ $result != *exist* ]]; then
+        if [[ $result != *"does not exist"* ]]; then
           echo "DELETED" >>$tmp
         fi
       else
