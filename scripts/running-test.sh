@@ -1,6 +1,10 @@
 #!/bin/bash
 
-function wait_tasks_done {
+get_random_string() {
+  eval ${1}=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w $2 | head -n 1)
+}
+
+wait_tasks_done() {
   echo wait tasks done...
   while true; do
     stat=`cf services`
@@ -13,24 +17,29 @@ function wait_tasks_done {
   done
 }
 
-resourceGroupName=cloud-foundry-$(cat /proc/sys/kernel/random/uuid)
+gourpSuffix=
+get_random_string "gourpSuffix" 16
+resourceGroupName=cloud-foundry-$gourpSuffix
 echo resource group for test: $resourceGroupName
 location=westus
 service=storageblob
 plan=standard
+accountSuffix=
+get_random_string "accountSuffix" 16
 config='{
   "resource_group_name": "'$resourceGroupName'",
-  "storage_account_name": "storage'$(cat /dev/urandom | tr -dc "a-z0-9" | fold -w 16 | head -n 1)'",
+  "storage_account_name": "cfsa'$accountSuffix'",
   "container_name": "mycontainer",
   "location": "'$location'",
   "account_type": "Standard_LRS"
 }'
 
-random_string=$(cat /dev/urandom | tr -dc "a-z0-9" | fold -w 16 | head -n 1)
-cf create-service azure-$service $plan $service$random_string -c "$config"
+instanceSuffix=
+get_random_string "instanceSuffix" 16
+cf create-service azure-$service $plan $service$instanceSuffix -c "$config"
 
 wait_tasks_done
 
-cf delete-service $service$random_string -f
+cf delete-service $service$instanceSuffix -f
 
 wait_tasks_done
