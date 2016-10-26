@@ -3,13 +3,13 @@
 # Please ensure no cf service running before testing
 
 #jobs:
-#  1.Create multiple instances for one service in parallel
-#  2.Delete/Create multiple instances for one service in parallel
-#  3.Delete multiple instances for one service in parallel
+#  1.Create instances for a service
+#  2.Delete/Create instances for a service
+#  3.Delete instances for a service
+#  4.Back to 1 to test another service
 
-#services_to_test="sqldb rediscache documentdb storageblob servicebus"
+services_to_test="sqldb rediscache documentdb storage servicebus"
 tmp=.tmp
-services_to_test="documentdb"
 threads=1
 location=westus
 
@@ -77,16 +77,13 @@ function make_config {
       config='{
         "resourceGroup": "'$resourceGroupName'",
         "docDbName": "docdb-'$(cat /proc/sys/kernel/random/uuid)'",
-        "parameters": {
-          "location": "'$location'"
-        }
+        "location": "'$location'"
       }'
       ;;
-    storageblob)
+    storage)
       config='{
         "resource_group_name": "'$resourceGroupName'",
         "storage_account_name": "storage'$(cat /dev/urandom | tr -dc "a-z0-9" | fold -w 16 | head -n 1)'",
-        "container_name": "mycontainer",
         "location": "'$location'",
         "account_type": "Standard_LRS"
       }' 
