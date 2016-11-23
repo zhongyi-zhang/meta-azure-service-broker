@@ -36,14 +36,12 @@ function make_config {
         "resourceGroup": "'$resourceGroupName'",
         "location": "'$location'",
         "sqlServerName": "sqlserver-'$(cat /proc/sys/kernel/random/uuid)'",
-        "sqlServerCreateIfNotExist": true,
         "sqlServerParameters": {
-            "allowSqlServerFirewallRule": {
+            "allowSqlServerFirewallRule": [{
                 "ruleName": "new rule",
                 "startIpAddress": "0.0.0.0",
                 "endIpAddress": "255.255.255.255"
-            },
-            "location": "'$location'",
+            }],
             "properties": {
                 "administratorLogin": "azureuser",
                 "administratorLoginPassword": "Password1234"
@@ -51,7 +49,6 @@ function make_config {
         },
         "sqldbName": "sqldb-'$(cat /proc/sys/kernel/random/uuid)'",
         "sqldbParameters": {
-            "location": "'$location'",
             "properties": {
                 "collation": "SQL_Latin1_General_CP1_CI_AS"
             }
