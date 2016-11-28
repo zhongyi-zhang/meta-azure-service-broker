@@ -14,8 +14,9 @@ var sinon = require('sinon');
 var cmdPoll = require('../../../../lib/services/azuresqldb/cmd-poll');
 var sqldbOperations = require('../../../../lib/services/azuresqldb/client');
 var azure = require('../helpers').azure;
+var msRestRequest = require('../../../../lib/common/msRestRequest');
 
-var accessToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik1uQ19WWmNBVGZNNXBPWWlKSE1iYTlnb0VLWSIsImtpZCI6Ik1uQ19WWmNBVGZNNXBPWWlKSE1iYTlnb0VLWSJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tLyIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzcyZjk4OGJmLTg2ZjEtNDFhZi05MWFiLTJkN2NkMDExZGI0Ny8iLCJpYXQiOjE0Njc4MTYyMTcsIm5iZiI6MTQ2NzgxNjIxNywiZXhwIjoxNDY3ODIwMTE3LCJhcHBpZCI6ImQ4MTllODE4LTRkNGEtNGZmOS04OWU5LTliZTBiZmVjOWVjZCIsImFwcGlkYWNyIjoiMSIsImlkcCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzcyZjk4OGJmLTg2ZjEtNDFhZi05MWFiLTJkN2NkMDExZGI0Ny8iLCJvaWQiOiI2NDgwN2MzMi0xYWYxLTRlNTgtYWMwOS02NGM1NTU0YzdjNTgiLCJzdWIiOiI2NDgwN2MzMi0xYWYxLTRlNTgtYWMwOS02NGM1NTU0YzdjNTgiLCJ0aWQiOiI3MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDciLCJ2ZXIiOiIxLjAifQ.tqCAMoZz7n3AKBjdNUHwGfLSaDp7Qdl6Dzu_5cf5WNoKCet9E6ohLZtohfiLXuNS-uG-UDRDNtvX_eVayui422CkdDSbAtEPZXIRaFD8dGVO3uMRKWhWQ1u-aTA8LKHKKO2a6aF9hWwjHDQ_FRwi1qZ8UX60HkW62MgLlJeym5AC8aL0JKVekmrVx-NGcfJJs7VXVOLbka45ADAlUNqi13TxyEY_oqCZzGatJZK8sFNYMvGFtTcnhjSEoxdl9LjcMAWWgVuKg-iVAX1vAf0HhD7H3XqJKPaZR-o2fQ5kvEKzzfz_VkUeQO4DG-1gpKS_jNVynb1ZxUGbs5y56WmDDw';
+var originGet = msRestRequest.GET;
 
 var afterProvisionValidParams = {
     instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
@@ -25,10 +26,9 @@ var afterProvisionValidParams = {
     space_guid: '4                                   ',
     parameters: {
         resourceGroup: 'sqldbResourceGroup',
+        location: 'westus',
         sqlServerName: 'golive4',
-        sqlServerCreateIfNotExist: true,
         sqlServerParameters: {
-            location: 'westus',
             properties: {
                 administratorLogin: 'xxxx',
                 administratorLoginPassword: 'xxxxxxx',
@@ -37,7 +37,6 @@ var afterProvisionValidParams = {
         },
         sqldbName: 'sqldb',
         sqldbParameters: {
-            location: 'westus',
             properties: {
                 collation: 'SQL_Latin1_General_CP1_CI_AS',
                 maxSizeBytes: '2147483648',
@@ -60,10 +59,9 @@ var afterDeprovisionValidParams = {
     space_guid: '4                                   ',
     parameters: {
         resourceGroup: 'sqldbResourceGroup',
+        location: 'westus',
         sqlServerName: 'golive4',
-        sqlServerCreateIfNotExist: true,
         sqlServerParameters: {
-            location: 'westus',
             properties: {
                 administratorLogin: 'xxxx',
                 administratorLoginPassword: 'xxxxxxx',
@@ -72,7 +70,6 @@ var afterDeprovisionValidParams = {
         },
         sqldbName: 'sqldb',
         sqldbParameters: {
-            location: 'westus',
             properties: {
                 collation: 'SQL_Latin1_General_CP1_CI_AS',
                 maxSizeBytes: '2147483648',
@@ -104,17 +101,17 @@ describe('SqlDb - Poll - polling database immediately after creation is started'
 
     before(function () {
         cp = new cmdPoll(log, afterProvisionValidParams);
+        msRestRequest.GET = sinon.stub();
+        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/golive4/databases/sqldb')
+          .yields(null, sqldbOpsGetDatabaseResult);
     });
 
     after(function () {
-        sqldbOps.getToken.restore();
-        sqldbOps.getDatabase.restore();
+        msRestRequest.GET = originGet;
     });
 
     describe('Poll should return 200 immediately after starting to provision a database', function () {
         it('should interpret the 404 from GetDatabase as creating the database', function (done) {
-            sinon.stub(sqldbOps, 'getToken').yields(null, accessToken);
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, sqldbOpsGetDatabaseResult);
             cp.poll(sqldbOps, function (err, result) {
                 should.not.exist(err);
                 result.value.state.should.equal('in progress');
@@ -158,17 +155,17 @@ describe('SqlDb - Poll - polling database after creation is complete', function 
 
     before(function () {
         cp = new cmdPoll(log, afterProvisionValidParams);
+        msRestRequest.GET = sinon.stub();
+        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/golive4/databases/sqldb')
+          .yields(null, sqldbOpsGetDatabaseResult, JSON.stringify(sqldbOpsGetDatabaseResult.body));
     });
 
     after(function () {
-        sqldbOps.getToken.restore();
-        sqldbOps.getDatabase.restore();
+        msRestRequest.GET = originGet;
     });
 
     describe('Poll should return 200 if ...', function () {
         it('is executed after sufficient time', function (done) {
-            sinon.stub(sqldbOps, 'getToken').yields(null, accessToken);
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, sqldbOpsGetDatabaseResult);
             cp.poll(sqldbOps, function (err, result) {
                 should.not.exist(err);
                 result.body.sqlServerName.should.equal('golive4');
@@ -197,18 +194,17 @@ describe('SqlDb - Poll - polling database after de-provision is complete', funct
 
     before(function () {
         cp = new cmdPoll(log, afterDeprovisionValidParams);
+        msRestRequest.GET = sinon.stub();
+        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/golive4')
+          .yields(null, {statusCode: 404});
     });
 
     after(function () {
-        sqldbOps.getToken.restore();
-        sqldbOps.getServer.restore();
-
+        msRestRequest.GET = originGet;
     });
 
     describe('Poll should return 200 after de-provisioning is complete', function () {
         it('should correctly interpret 404 as server is deleted', function (done) {
-            sinon.stub(sqldbOps, 'getToken').yields(null, accessToken);
-            sinon.stub(sqldbOps, 'getServer').yields(null, sqldbOpsGetServerResult);
             cp.poll(sqldbOps, function (err, result) {
                 should.not.exist(err);
                 result.value.state.should.equal('succeeded');

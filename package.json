@@ -30,7 +30,6 @@
     "azure-arm-resource": "1.0.0-preview",
     "azure-arm-storage": "0.12.2-preview",
     "config": "1.21.0",
-    "documentdb": "1.6.0",
     "http-status-codes": "1.0.6",
     "logule": "2.1.0",
     "ms-rest-azure": "1.14.5",
@@ -53,7 +52,8 @@
     "redis": "2.6.1",
     "should": "8.3.0",
     "sinon": "1.17.3",
-    "tedious": "^1.14.0"
+    "tedious": "^1.14.0",
+    "documentdb": "1.6.0"
   },
   "homepage": "https://github.com/Azure/meta-azure-service-broker",
   "repository": {

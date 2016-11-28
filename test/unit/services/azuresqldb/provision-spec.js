@@ -14,13 +14,14 @@ var should = require('should');
 var sinon = require('sinon');
 var cmdProvision = require('../../../../lib/services/azuresqldb/cmd-provision');
 var sqldbOperations = require('../../../../lib/services/azuresqldb/client');
-var resourceGroupClient = require('../../../../lib/common/resourceGroup-client');
 var azure = require('../helpers').azure;
-
-var accessToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik1uQ19WWmNBVGZNNXBPWWlKSE1iYTlnb0VLWSIsImtpZCI6Ik1uQ19WWmNBVGZNNXBPWWlKSE1iYTlnb0VLWSJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tLyIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzcyZjk4OGJmLTg2ZjEtNDFhZi05MWFiLTJkN2NkMDExZGI0Ny8iLCJpYXQiOjE0Njc4MTYyMTcsIm5iZiI6MTQ2NzgxNjIxNywiZXhwIjoxNDY3ODIwMTE3LCJhcHBpZCI6ImQ4MTllODE4LTRkNGEtNGZmOS04OWU5LTliZTBiZmVjOWVjZCIsImFwcGlkYWNyIjoiMSIsImlkcCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzcyZjk4OGJmLTg2ZjEtNDFhZi05MWFiLTJkN2NkMDExZGI0Ny8iLCJvaWQiOiI2NDgwN2MzMi0xYWYxLTRlNTgtYWMwOS02NGM1NTU0YzdjNTgiLCJzdWIiOiI2NDgwN2MzMi0xYWYxLTRlNTgtYWMwOS02NGM1NTU0YzdjNTgiLCJ0aWQiOiI3MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDciLCJ2ZXIiOiIxLjAifQ.tqCAMoZz7n3AKBjdNUHwGfLSaDp7Qdl6Dzu_5cf5WNoKCet9E6ohLZtohfiLXuNS-uG-UDRDNtvX_eVayui422CkdDSbAtEPZXIRaFD8dGVO3uMRKWhWQ1u-aTA8LKHKKO2a6aF9hWwjHDQ_FRwi1qZ8UX60HkW62MgLlJeym5AC8aL0JKVekmrVx-NGcfJJs7VXVOLbka45ADAlUNqi13TxyEY_oqCZzGatJZK8sFNYMvGFtTcnhjSEoxdl9LjcMAWWgVuKg-iVAX1vAf0HhD7H3XqJKPaZR-o2fQ5kvEKzzfz_VkUeQO4DG-1gpKS_jNVynb1ZxUGbs5y56WmDDw';
+var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'SqlDb-Mocha');
 var sqldbOps = new sqldbOperations(log, azure);
+
+var originGet = msRestRequest.GET;
+var originPut = msRestRequest.PUT;
 
 describe('SqlDb - Provision - PreConditions', function () {
     var validParams = {};
@@ -170,7 +171,7 @@ describe('SqlDb - Provision - Invalid PreConditions - missing parameters file', 
 describe('SqlDb - Provision - Execution - server & Database that does not previously exist', function () {
     var validParams = {};
     var cp;
-
+    
     before(function () {
         validParams = {
             instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
@@ -181,7 +182,7 @@ describe('SqlDb - Provision - Execution - server & Database that does not previo
                 sqlServerName: 'azureuser',
                 sqlServerParameters: {
                     allowSqlServerFirewallRules: [{
-                        ruleName: 'new rule',
+                        ruleName: 'newrule',
                         startIpAddress: '0.0.0.0',
                         endIpAddress: '255.255.255.255'
                     }],
@@ -203,34 +204,35 @@ describe('SqlDb - Provision - Execution - server & Database that does not previo
 
         cp = new cmdProvision(log, validParams);
         cp.fixupParameters();
+        
+        msRestRequest.PUT = sinon.stub();
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup')
+          .yields(null, {statusCode: 200});  
+
+        msRestRequest.GET = sinon.stub();
+        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser')
+          .yields(null, {statusCode: 404});
+        
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser')
+          .yields(null, {statusCode: 201});        
+        
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser/firewallRules/newrule')
+          .yields(null, {statusCode: 200});
+        
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser/databases/azureuserSqlDb')
+          .yields(null, {statusCode: 202});
     });
 
     after(function () {
-        resourceGroupClient.checkExistence.restore();
-        resourceGroupClient.createOrUpdate.restore();
-        sqldbOps.getToken.restore();
-        sqldbOps.createDatabase.restore();
-        sqldbOps.createFirewallRule.restore();
-        sqldbOps.getServer.restore();
-        sqldbOps.createServer.restore();
-        sqldbOps.getDatabase.restore();
+        msRestRequest.GET = originGet;
+        msRestRequest.PUT = originPut;
     });
 
     it('should not callback error', function (done) {
-
-        sinon.stub(resourceGroupClient, 'checkExistence').yields(null, false);
-        sinon.stub(resourceGroupClient, 'createOrUpdate').yields(null, { provisioningState: 'Succeeded' });
-        sinon.stub(sqldbOps, 'getServer').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-        sinon.stub(sqldbOps, 'createServer').yields(null, { statusCode: HttpStatus.OK });
-        sinon.stub(sqldbOps, 'getDatabase').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-        sinon.stub(sqldbOps, 'createDatabase').yields(null, {body: {}});
-        sinon.stub(sqldbOps, 'getToken').yields(null, accessToken);
-        sinon.stub(sqldbOps, 'createFirewallRule').yields(null, { statusCode: HttpStatus.OK });
-        cp.provision(sqldbOps, resourceGroupClient, function (err, result) {
+        cp.provision(sqldbOps, function (err, result) {
             should.not.exist(err);
             done();
         });
-
     });
 });
 
@@ -258,24 +260,19 @@ describe('SqlDb - Provision - Execution - Basic plan, no sql server parameters, 
 
         cp = new cmdProvision(log, validParams);
         cp.fixupParameters();
+        
+        msRestRequest.GET = sinon.stub();
+        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser')
+          .yields(null, {statusCode: 200});
     });
 
     after(function () {
-        resourceGroupClient.checkExistence.restore();
-        resourceGroupClient.createOrUpdate.restore();
-        sqldbOps.getToken.restore();
-        sqldbOps.createDatabase.restore();
-        sqldbOps.getServer.restore();
+        msRestRequest.GET = originGet;
     });
 
     it('should callback conflict error', function (done) {
-
-        sinon.stub(resourceGroupClient, 'checkExistence').yields(null, false);
-        sinon.stub(resourceGroupClient, 'createOrUpdate').yields(null, { provisioningState: 'Succeeded' });
-        sinon.stub(sqldbOps, 'createDatabase').yields(null, {body: {}});
-        sinon.stub(sqldbOps, 'getToken').yields(null, accessToken);
-        sinon.stub(sqldbOps, 'getServer').yields(null, { statusCode: HttpStatus.OK });
-        cp.provision(sqldbOps, resourceGroupClient, function (err, result) {
+        
+        cp.provision(sqldbOps, function (err, result) {
             should.exist(err);
             err.statusCode.should.equal(409);
             done();
@@ -299,7 +296,7 @@ describe('SqlDb - Provision - Firewall rules', function () {
                     sqlServerName: 'azureuser',
                     sqlServerParameters: {
                         allowSqlServerFirewallRules: [{
-                            ruleName: 'new rule',
+                            ruleName: 'newrule',
                             startIpAddress: '0.0.0.0',
                             endIpAddress: '255.255.255.255'
                         }],
@@ -376,7 +373,7 @@ describe('SqlDb - Provision - Firewall rules', function () {
                     sqlServerName: 'azureuser',
                     sqlServerParameters: {
                         allowSqlServerFirewallRules: [{
-                            ruleName: 'new rule',
+                            ruleName: 'newrule',
                             endIpAddress: '255.255.255.255'
                         }],
                         properties: {
@@ -403,5 +400,3 @@ describe('SqlDb - Provision - Firewall rules', function () {
         });
     });
 });
-
-
