@@ -17,8 +17,8 @@ var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'ServiceBus-Mocha');
 
-var originGet = msRestRequest.GET;
-var originPut = msRestRequest.PUT;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('ServiceBus', function() {
 
@@ -87,9 +87,6 @@ describe('ServiceBus', function() {
           }
         };
         
-        originGet = msRestRequest.GET;
-        originPut = msRestRequest.PUT;
-        
         msRestRequest.GET = sinon.stub();
         msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/mysbtest/providers/Microsoft.ServiceBus/namespaces/mysb')
           .yields(null, {statusCode: 404});
@@ -103,8 +100,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
-        msRestRequest.PUT = originPut;
+        mockingHelper.restore();
       });
     
       it('should create the namespace', function(done) {

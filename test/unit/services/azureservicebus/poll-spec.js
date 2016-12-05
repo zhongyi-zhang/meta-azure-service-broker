@@ -17,7 +17,8 @@ var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'ServiceBus-Mocha');
 
-var originGet = msRestRequest.GET;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('ServiceBus', function() {
 
@@ -41,7 +42,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
       });
       
       it('should return the state: succeeded', function(done) {
@@ -86,7 +87,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
       });
       
       it('should return the state: in progress', function(done) {
@@ -131,7 +132,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
       });
       
       it('should return the state: in progress', function(done) {
@@ -176,7 +177,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
       });
       
       it('should return the state: in progress', function(done) {
@@ -221,7 +222,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
       });
       
       it('should return the state: in progress', function(done) {
@@ -269,7 +270,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
       });
       
       it('should return the state: succeeded', function(done) {

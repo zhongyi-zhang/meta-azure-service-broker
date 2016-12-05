@@ -16,7 +16,8 @@ var sqldbOperations = require('../../../../lib/services/azuresqldb/client');
 var azure = require('../helpers').azure;
 var msRestRequest = require('../../../../lib/common/msRestRequest');
 
-var originGet = msRestRequest.GET;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 var afterProvisionValidParams = {
     instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
@@ -107,7 +108,7 @@ describe('SqlDb - Poll - polling database immediately after creation is started'
     });
 
     after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
     });
 
     describe('Poll should return 200 immediately after starting to provision a database', function () {
@@ -161,7 +162,7 @@ describe('SqlDb - Poll - polling database after creation is complete', function 
     });
 
     after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
     });
 
     describe('Poll should return 200 if ...', function () {
@@ -200,7 +201,7 @@ describe('SqlDb - Poll - polling database after de-provision is complete', funct
     });
 
     after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
     });
 
     describe('Poll should return 200 after de-provisioning is complete', function () {

@@ -17,7 +17,8 @@ var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'ServiceBus-Mocha');
 
-var originPost = msRestRequest.POST;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('ServiceBus', function() {
 
@@ -42,7 +43,7 @@ describe('ServiceBus', function() {
       });
       
       after(function () {
-        msRestRequest.POST = originPost;
+        mockingHelper.restore();
       });
       
       it('should return the credentials', function(done) {

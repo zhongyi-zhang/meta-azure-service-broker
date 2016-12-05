@@ -103,8 +103,8 @@ describe('DocumentDb - Index - Poll', function() {
     });
     
     after(function() {
-        //msRestRequest.GET = originGet;
-        //msRestRequest.POST = originPost;
+        msRestRequest.GET = originGet;
+        msRestRequest.POST = originPost;
         request.post.restore();
     });
     

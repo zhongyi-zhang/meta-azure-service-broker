@@ -19,7 +19,8 @@ var msRestRequest = require('../../../../lib/common/msRestRequest');
 var log = logule.init(module, 'SqlDb-Mocha');
 var sqldbOps = new sqldbOperations(log, azure);
 
-var originDelete = msRestRequest.DELETE;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('SqlDb - Deprovision', function () {
 
@@ -45,7 +46,7 @@ describe('SqlDb - Deprovision', function () {
     });
 
     after(function () {
-        msRestRequest.DELETE = originDelete;
+        mockingHelper.restore();
     });
 
     describe('Deprovision should return 200 ...', function () {

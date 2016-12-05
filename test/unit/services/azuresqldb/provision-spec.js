@@ -20,8 +20,8 @@ var msRestRequest = require('../../../../lib/common/msRestRequest');
 var log = logule.init(module, 'SqlDb-Mocha');
 var sqldbOps = new sqldbOperations(log, azure);
 
-var originGet = msRestRequest.GET;
-var originPut = msRestRequest.PUT;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('SqlDb - Provision - PreConditions', function () {
     var validParams = {};
@@ -224,8 +224,7 @@ describe('SqlDb - Provision - Execution - server & Database that does not previo
     });
 
     after(function () {
-        msRestRequest.GET = originGet;
-        msRestRequest.PUT = originPut;
+        mockingHelper.restore();
     });
 
     it('should not callback error', function (done) {
@@ -267,7 +266,7 @@ describe('SqlDb - Provision - Execution - Basic plan, no sql server parameters, 
     });
 
     after(function () {
-        msRestRequest.GET = originGet;
+        mockingHelper.restore();
     });
 
     it('should callback conflict error', function (done) {

@@ -17,7 +17,8 @@ var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'ServiceBus-Mocha');
 
-var originDelete = msRestRequest.DELETE;
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('ServiceBus', function() {
 
@@ -40,7 +41,7 @@ describe('ServiceBus', function() {
       });
 
       after(function () {
-        msRestRequest.DELETE = originDelete;
+        mockingHelper.restore();
       });
       
       it('should delete the namespace', function(done) {
