@@ -38,7 +38,7 @@ describe('RedisCache - Provision-Poll - Execution - Cache that exists', function
         
         msRestRequest.GET = sinon.stub();
         msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC')
-          .yields(null, {statusCode: 200}, {provisioningState : 'Succeeded'});
+          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState" : "Succeeded"}}');
     });
     
     after(function() {
@@ -74,7 +74,7 @@ describe('RedisCache - Provision-Poll - Execution - Cache is creating', function
         };
         msRestRequest.GET = sinon.stub();
         msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC')
-          .yields(null, {statusCode: 200}, {provisioningState : 'Creating'});
+          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState" : "Creating"}}');
     });
     
     after(function() {
@@ -107,11 +107,11 @@ describe('RedisCache - Deprovision-Poll - Execution - Cache that unexists', func
             last_operation : "deprovision",
             azure: azure
         };
-        var e = new Error();
-        e.statusCode = 404;
+        var res = {};
+        res.statusCode = 404;
         msRestRequest.GET = sinon.stub();
         msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC')
-          .yields(null, e);
+          .yields(null, res);
     });
     
     after(function() {
