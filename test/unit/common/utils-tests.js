@@ -61,6 +61,15 @@ describe('Util', function() {
           'password': environmentVariablesToSet['AZURE_BROKER_DATABASE_PASSWORD'],
           'database': environmentVariablesToSet['AZURE_BROKER_DATABASE_NAME'],
           'encryptionKey': environmentVariablesToSet['AZURE_BROKER_DATABASE_ENCRYPTION_KEY'],
+        },
+        'privilege': {
+          'sqldb': {
+            'isAllowedToConfigureFirewallRules': true,
+            'isAllowedToCreateSqlServer': true
+          }
+        },
+        'accountPool': {
+          'sqldb': {}
         }
       };
 
