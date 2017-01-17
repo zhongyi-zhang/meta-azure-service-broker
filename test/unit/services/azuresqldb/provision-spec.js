@@ -57,8 +57,7 @@ describe('SqlDb - Provision - PreConditions', function () {
                 azure: azure,
                 privilege: {
                     'sqldb': {
-                        'isAllowedToCreateSqlServer': true,
-                        'isAllowedToConfigureFirewallRules': true
+                        'allowToCreateSqlServer': true
                     }
                 },
                 accountPool:{sql:{}}
@@ -105,8 +104,7 @@ describe('SqlDb - Provision - PreConditions', function () {
                 azure: azure,
                 privilege: {
                     'sqldb': {
-                        'isAllowedToCreateSqlServer': true,
-                        'isAllowedToConfigureFirewallRules': true
+                        'allowToCreateSqlServer': true
                     }
                 },
                 accountPool:{sql:{}}
@@ -179,8 +177,7 @@ describe('SqlDb - Provision - Execution', function () {
             azure: azure,
             privilege: {
                 'sqldb': {
-                    'isAllowedToCreateSqlServer': true,
-                    'isAllowedToConfigureFirewallRules': true
+                    'allowToCreateSqlServer': true
                 }
             },
             accountPool:{sql:{}}

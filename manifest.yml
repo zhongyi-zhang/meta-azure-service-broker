@@ -18,8 +18,16 @@ applications:
     AZURE_BROKER_DATABASE_NAME: REPLACE-ME
     AZURE_BROKER_DATABASE_ENCRYPTION_KEY: REPLACE-ME
     
-    IS_ALLOWED_TO_CREATE_SQL_SERVER: true
-    IS_ALLOWED_TO_CONFIGURE_FIREWALL_RULES: true
-    SQL_SERVER_NAME: REPLACE-ME
-    ADMINISTRATOR_LOGIN: REPLACE-ME
-    ADMINISTRATOR_LOGIN_PASSWORD: REPLACE-ME
+    ALLOW_TO_CREATE_SQL_SERVER: true | false
+    SQL_SERVER_POOL: '[
+      {
+        "sqlServerName": "REPLACE-ME",
+        "adminstratorLogin": "REPLACE-ME",
+        "adminstratorLoginPassword": "REPLACE-ME"
+      },
+      {
+        "sqlServerName": "REPLACE-ME",
+        "adminstratorLogin": "REPLACE-ME",
+        "adminstratorLoginPassword": "REPLACE-ME"
+      },
+    ]'

@@ -64,8 +64,7 @@ describe('Util', function() {
         },
         'privilege': {
           'sqldb': {
-            'isAllowedToConfigureFirewallRules': true,
-            'isAllowedToCreateSqlServer': true
+            'allowToCreateSqlServer': true
           }
         },
         'accountPool': {
