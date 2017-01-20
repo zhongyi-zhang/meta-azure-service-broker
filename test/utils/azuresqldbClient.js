@@ -1,6 +1,7 @@
 var logule = require('logule');
 var statusCode = require('./statusCode');
 var supportedEnvironments = require('./supportedEnvironments');
+var async = require('async');
 
 module.exports = function(environment) {
   var clientName = 'azuresqldbClient';
@@ -17,29 +18,55 @@ module.exports = function(environment) {
       server: credential.sqlServerName + serverSuffix,
       options: {encrypt: true, database: credential.sqldbName}
     };
-    var connection = new Connection(config);
-    log.debug('Connecting to SQL server %s%s and database %s', credential.sqlServerName, serverSuffix, credential.sqldbName);
-    connection.on('connect', function(err) {
-      if(!err){
-        log.debug('The SQL Database can be connected.');
-        
+    
+    function nextStep(err, message, callback) {
+      if (err) {
+        log.error(message + ' Error: %j', 'not ', err);
+        callback(err);
+      } else {
+        log.debug(message, '');
+        callback(null);
+      }
+    }
+    
+    var connection;
+    async.waterfall([
+      function(callback) {
+        log.debug('Connecting to SQL server %s%s and database %s', credential.sqlServerName, serverSuffix, credential.sqldbName);
+        connection = new Connection(config);
+        connection.on('connect', function(err) {
+          var message = 'The SQL Database can %sbe connected.';
+          nextStep(err, message, callback);
+        });
+      },
+      function(callback) {
         var request = new Request('CREATE TABLE testtable(aaa char(10))', function(err) {
-          if (!err) {
-              log.debug('The user can create a new table in the SQL Database.');
-              next(statusCode.PASS);
-          } else {
-              log.error('The user can\'t create a new table in the SQL Database. Error: %j', error);
-              next(statusCode.FAIL);
-          }
-          connection.close();
+          var message = 'The user can %screate a new table in the SQL Database.';
+          nextStep(err, message, callback);
+        });
+        connection.execSql(request);
+      },
+      function(callback) {
+        var request = new Request('INSERT INTO testtable(aaa) values (\'bbb\')', function(err) {
+          var message = 'The user can %sinsert a new row to the new table.';
+          nextStep(err, message, callback);
+        });
+        connection.execSql(request);
+      },
+      function(callback) {
+        var request = new Request('SELECT * FROM testtable', function(err) {
+          var message = 'The user can %sget the row inserted.';
+          nextStep(err, message, callback);
         });
         connection.execSql(request);
       }
-      else {
-        log.error('The SQL Database can not be connected. Error: %j', error);
-        connection.close();
+    ],function(err){
+      connection.close();
+      if (err) {
         next(statusCode.FAIL);
+      } else {
+        next(statusCode.PASS);
       }
-    }); 
+    });
   }
 }
