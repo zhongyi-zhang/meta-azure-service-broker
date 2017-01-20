@@ -8,6 +8,8 @@ module.exports = function(environment) {
 
   this.validateCredential = function(credential, next) {
     var Connection = require('tedious').Connection;
+    var Request = require('tedious').Request;
+    
     var serverSuffix = supportedEnvironments[environment]['sqlServerEndpointSuffix'];
     var config = {  
       userName: credential.databaseLogin,
@@ -20,8 +22,18 @@ module.exports = function(environment) {
     connection.on('connect', function(err) {
       if(!err){
         log.debug('The SQL Database can be connected.');
-        connection.close();
-        next(statusCode.PASS)
+        
+        var request = new Request('CREATE TABLE testtable(aaa char(10))', function(err) {
+          if (!err) {
+              log.debug('The user can create a new table in the SQL Database.');
+              next(statusCode.PASS);
+          } else {
+              log.error('The user can\'t create a new table in the SQL Database. Error: %j', error);
+              next(statusCode.FAIL);
+          }
+          connection.close();
+        });
+        connection.execSql(request);
       }
       else {
         log.error('The SQL Database can not be connected. Error: %j', error);
