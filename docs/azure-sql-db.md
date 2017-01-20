@@ -30,6 +30,7 @@
   
   ** NOTE **: The firewall rule needs to be deleted manually if Bind fails. The rule name should be 'broker-temp-rule-<sqldbName>'.
   ** NOTE **: Permission "CONTROL" in a database: https://msdn.microsoft.com/en-us/library/ms178569.aspx
+  
 ### Unbind
 
   1. Try to login to the new-created database of the server to drop the user for the Login. If succeeded then go to 3, else go to 2.
