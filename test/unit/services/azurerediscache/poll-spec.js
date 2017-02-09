@@ -13,13 +13,8 @@ var sinon = require('sinon');
 var cmdPoll = require('../../../../lib/services/azurerediscache/cmd-poll');
 var redisClient = require('../../../../lib/services/azurerediscache/client');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'RedisCache-Mocha');
-  
-var mockingHelper = require('../mockingHelper');
-mockingHelper.backup();
-redisClient.initialize(azure, log);
   
 describe('RedisCache - Provision-Poll - Execution - Cache that exists', function() {
     var validParams;
@@ -35,14 +30,11 @@ describe('RedisCache - Provision-Poll - Execution - Cache that exists', function
             last_operation: "provision",
             azure: azure
         };
-        
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC')
-          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState" : "Succeeded"}}');
+        sinon.stub(redisClient, 'poll').yields(null, {provisioningState : 'Succeeded'});
     });
     
     after(function() {
-        mockingHelper.restore();
+        redisClient.poll.restore();
     });
     
     describe('Poll operation outcomes should be...', function() {
@@ -72,17 +64,15 @@ describe('RedisCache - Provision-Poll - Execution - Cache is creating', function
             last_operation : "provision",
             azure: azure
         };
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC')
-          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState" : "Creating"}}');
+        sinon.stub(redisClient, 'poll').yields(null, {provisioningState : 'Creating'});
     });
     
     after(function() {
-        mockingHelper.restore();
+        redisClient.poll.restore();
     });
     
     describe('Poll operation outcomes should be...', function() {
-        it('should output provisioningState = Creating', function(done) {
+        it('should output provisioningState = Succeeded', function(done) {
             var cp = new cmdPoll(log, validParams);
             cp.poll(redisClient, function(err, result) {
                 should.not.exist(err);
@@ -107,15 +97,13 @@ describe('RedisCache - Deprovision-Poll - Execution - Cache that unexists', func
             last_operation : "deprovision",
             azure: azure
         };
-        var res = {};
-        res.statusCode = 404;
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC')
-          .yields(null, res);
+        var e = new Error();
+        e.statusCode = 404;
+        sinon.stub(redisClient, 'poll').yields(e);
     });
     
     after(function() {
-        mockingHelper.restore();
+        redisClient.poll.restore();
     });
     
     describe('Poll operation outcomes should be...', function() {

@@ -12,13 +12,10 @@ var should = require('should');
 var sinon = require('sinon');
 var common = require('../../../../lib/common');
 var azurestorage = require('../../../../lib/services/azurestorage/');
+var storageClient = require('../../../../lib/services/azurestorage/storageclient');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'Storage-Mocha');
-
-var mockingHelper = require('../mockingHelper');
-mockingHelper.backup();
 
 describe('Storage', function() {
 
@@ -33,18 +30,18 @@ describe('Storage', function() {
         provisioning_result: '{\"resourceGroupResult\":{\"resourceGroupName\":\"cloud-foundry-a6c5953c-f5b2-11e5-a5b7-000d3a80e5f5\",\"groupParameters\":{\"location\":\"eastus\"}},\"storageAccountResult\":{\"storageAccountName\":\"cfa6c5953cf5b211e5a5b700\",\"accountParameters\":{\"location\":\"eastus\",\"accountType\":\"Standard_LRS\"}}}',
         azure: azure,
       };
+      storageClient.init = sinon.stub();
     });
 
     describe('When the provisioning state is Succeeded', function() {
 
       before(function() {
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/cloud-foundry-a6c5953c-f5b2-11e5-a5b7-000d3a80e5f5/providers/Microsoft.Storage/storageAccounts/cfa6c5953cf5b211e5a5b700')
-          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState":"Succeeded"}}');
+        sinon.stub(storageClient, 'poll').yields(null,
+          'Succeeded');
       });
 
       after(function() {
-        mockingHelper.restore();
+        storageClient.poll.restore();
       });
 
       it('should return the state: succeeded', function(done) {
@@ -87,13 +84,12 @@ describe('Storage', function() {
     describe('When the provisioning state is Creating', function() {
 
       before(function() {
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/cloud-foundry-a6c5953c-f5b2-11e5-a5b7-000d3a80e5f5/providers/Microsoft.Storage/storageAccounts/cfa6c5953cf5b211e5a5b700')
-          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState":"Creating"}}');
+        sinon.stub(storageClient, 'poll').yields(null,
+          'Creating');
       });
 
       after(function() {
-        mockingHelper.restore();
+        storageClient.poll.restore();
       });
 
       it('should return the state: in progress', function(done) {
@@ -136,13 +132,12 @@ describe('Storage', function() {
     describe('When the provisioning state is ResolvingDNS', function() {
 
       before(function() {
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/cloud-foundry-a6c5953c-f5b2-11e5-a5b7-000d3a80e5f5/providers/Microsoft.Storage/storageAccounts/cfa6c5953cf5b211e5a5b700')
-          .yields(null, {statusCode: 200}, '{"properties":{"provisioningState":"ResolvingDNS"}}');
+        sinon.stub(storageClient, 'poll').yields(null,
+          'ResolvingDNS');
       });
 
       after(function() {
-        mockingHelper.restore();
+        storageClient.poll.restore();
       });
 
       it('should return the state: in progress', function(done) {

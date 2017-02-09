@@ -13,14 +13,9 @@ var sinon = require('sinon');
 var cmdBind = require('../../../../lib/services/azurerediscache/cmd-bind');
 var redisClient = require('../../../../lib/services/azurerediscache/client');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'RedisCache-Mocha');
   
-var mockingHelper = require('../mockingHelper');
-mockingHelper.backup();
-redisClient.initialize(azure, log);
-
 describe('RedisCache - Bind', function() {
     var validParams;
     var fakeAccessKeys = {primaryKey: 'fake-primary-key', secondaryKey: 'fake-secondary-key'};
@@ -34,13 +29,11 @@ describe('RedisCache - Bind', function() {
             },
             azure: azure
         };
-        msRestRequest.POST = sinon.stub();
-        msRestRequest.POST.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/redisResourceGroup/providers/Microsoft.Cache/Redis/C0CacheNC/listKeys')
-          .yields(null, {statusCode: 200}, JSON.stringify(fakeAccessKeys));
+        sinon.stub(redisClient, 'bind').yields(null, fakeAccessKeys);
     });
     
     after(function() {
-        mockingHelper.restore();
+        redisClient.bind.restore();
     });
     
     describe('When access keys are retrievied from Azure successfully', function() {

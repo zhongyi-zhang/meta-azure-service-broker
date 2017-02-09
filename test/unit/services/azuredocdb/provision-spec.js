@@ -11,13 +11,8 @@ var cmdProvision = require('../../../../lib/services/azuredocdb/cmd-provision');
 var docDbClient = require('../../../../lib/services/azuredocdb/client');
 var resourceGroupClient = require('../../../../lib/common/resourceGroup-client');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
-var log = logule.init(module, 'DocumentDb-Mocha');
-
-var originGet = msRestRequest.GET;
-var originPut = msRestRequest.PUT;
-docDbClient.initialize(azure, log);
+var log = logule.init(module, 'DocumentDb-Tests');
 
 describe('DocumentDb - Provision - PreConditions', function() {
   var validParams = {};
@@ -81,27 +76,23 @@ describe('DocumentDb - Provision - Execution - DocDb that doesn\'t previsouly ex
       azure : azure,
     };
     cp = new cmdProvision(log, validParams);
-    
-    msRestRequest.GET = sinon.stub();
-    msRestRequest.GET.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourcegroups/docDbResourceGroup/providers/Microsoft.DocumentDB/databaseAccounts/testDocDbAccount')
-      .yields(null, {statusCode: 404});
-    
-    msRestRequest.PUT = sinon.stub();
-    msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/docDbResourceGroup')
-      .yields(null, {statusCode: 200});
-
-    msRestRequest.PUT.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourcegroups/docDbResourceGroup/providers/Microsoft.DocumentDB/databaseAccounts/testDocDbAccount')
-      .yields(null, {statusCode: 200});
   });
     
   after(function() {
-    msRestRequest.GET = originGet;
-    msRestRequest.PUT = originPut;
+    resourceGroupClient.createOrUpdate.restore();
+    docDbClient.checkDocDbAccountExistence.restore();
+    docDbClient.createDocDbAccount.restore();
   });
     
   describe('Provision operation outcomes should be...', function() {
     it('should not exist error', function(done) {
-      cp.provision(docDbClient, function(err, result) {
+      sinon.stub(resourceGroupClient, 'createOrUpdate').yields(null);
+      sinon.stub(docDbClient, 'checkDocDbAccountExistence').yields(null);
+      sinon.stub(docDbClient, 'createDocDbAccount').yields(null, {
+        resourceGroupName: 'docDbResourceGroup',
+        docDbAccountName: 'testDocDbAccount'
+      });
+      cp.provision(docDbClient, resourceGroupClient, function(err, result) {
         should.not.exist(err);
         result.should.be.eql({
           resourceGroupName: 'docDbResourceGroup',
@@ -109,6 +100,7 @@ describe('DocumentDb - Provision - Execution - DocDb that doesn\'t previsouly ex
         });
         done();
       });
+            
     });
   });
 });

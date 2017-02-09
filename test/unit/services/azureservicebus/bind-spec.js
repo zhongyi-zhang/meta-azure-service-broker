@@ -12,17 +12,18 @@ var should = require('should');
 var sinon = require('sinon');
 var common = require('../../../../lib/common');
 var azureservicebus = require('../../../../lib/services/azureservicebus/');
+var utils = require('../../../../lib/services/azureservicebus/utils');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'ServiceBus-Mocha');
-
-var mockingHelper = require('../mockingHelper');
-mockingHelper.backup();
 
 describe('ServiceBus', function() {
 
   describe('Binding', function() {
+
+    before(function() {
+      utils.init = sinon.stub();
+    });
 
     describe('When no error is thrown', function() {
       var sandbox;
@@ -34,18 +35,15 @@ describe('ServiceBus', function() {
         validParams = {
           instance_id: 'e77a25d2-f58c-11e5-b933-000d3a80e5f5',
           provisioning_result: '{\"resourceGroupName\":\"cloud-foundry-e77a25d2-f58c-11e5-b933-000d3a80e5f5\",\"namespaceName\":\"cfe77a25d2f58c11e5b93300\"}',
-          azure: azure
+          azure: azure,
         };
-        
-        msRestRequest.POST = sinon.stub();
-        msRestRequest.POST.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/cloud-foundry-e77a25d2-f58c-11e5-b933-000d3a80e5f5/providers/Microsoft.ServiceBus/namespaces/cfe77a25d2f58c11e5b93300/authorizationRules/RootManageSharedAccessKey/ListKeys')
-          .yields(null, {statusCode: 200}, '{"primaryKey":"fake-primary-key"}');
+        sinon.stub(utils, 'listNamespaceKeys').yields(null, key_name, key_value);
       });
-      
-      after(function () {
-        mockingHelper.restore();
+
+      after(function() {
+        utils.listNamespaceKeys.restore();
       });
-      
+
       it('should return the credentials', function(done) {
         azureservicebus.bind(log, validParams, function(
           err, reply, result) {

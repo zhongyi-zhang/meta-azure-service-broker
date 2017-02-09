@@ -12,17 +12,18 @@ var should = require('should');
 var sinon = require('sinon');
 var common = require('../../../../lib/common');
 var azurestorage = require('../../../../lib/services/azurestorage/');
+var storageClient = require('../../../../lib/services/azurestorage/storageclient');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'Storage-Mocha');
-
-var mockingHelper = require('../mockingHelper');
-mockingHelper.backup();
 
 describe('Storage', function() {
 
   describe('Provisioning', function() {
+
+    before(function() {
+      storageClient.init = sinon.stub();
+    });
 
     describe('When no specific parameters are provided', function() {
       var validParams = {};
@@ -59,21 +60,25 @@ describe('Storage', function() {
               account_type: 'Standard_LRS'
             }
           };
-          
-          msRestRequest.POST = sinon.stub();
-          msRestRequest.POST.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/providers/Microsoft.Storage/checkNameAvailability')
-            .yields(null, {statusCode: 200}, {nameAvailable: true});
-            
-          msRestRequest.PUT = sinon.stub();
-          msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/test031702')
-            .yields(null, {statusCode: 200});
-            
-          msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/test031702/providers/Microsoft.Storage/storageAccounts/test031702sa')
-            .yields(null, {statusCode: 202});
+          sinon.stub(storageClient, 'provision').yields(null, {
+            resourceGroupResult: {
+              'resourceGroupName': 'test031702',
+              'groupParameters': {
+                'location': 'eastus'
+              }
+            }, 
+            storageAccountResult: {
+              'storageAccountName': 'test031702sa',
+              'accountParameters': {
+                'location': 'eastus',
+                'accountType': 'Standard_LRS'
+              }
+            }
+          });
         });
 
         after(function() {
-          mockingHelper.restore();
+          storageClient.provision.restore();
         });
 
         it('should create the storage', function(done) {
@@ -90,20 +95,14 @@ describe('Storage', function() {
               resourceGroupResult: {
                 'resourceGroupName': 'test031702',
                 'groupParameters': {
-                  'location': 'westus'
+                  'location': 'eastus'
                 }
               },
               storageAccountResult: {
                 'storageAccountName': 'test031702sa',
                 'accountParameters': {
-                  "kind": "Storage",
-                  "location": "westus",
-                  "sku": {
-                    "name": "Standard_LRS"
-                  },
-                  'tags': {
-                    'user-agent': 'meta-azure-service-broker'
-                  }
+                  'location': 'eastus',
+                  'accountType': 'Standard_LRS'
                 }
               }
             };
@@ -114,7 +113,7 @@ describe('Storage', function() {
         });
       });
 
-    describe('When specific parameters are provided but invalid',
+    describe('When specific parameters are provided and invalid',
       function() {
         var validParams = {};
 
@@ -129,18 +128,13 @@ describe('Storage', function() {
               account_type: 'Standard_LRS'
             }
           };
-
-          msRestRequest.POST = sinon.stub();
-          msRestRequest.POST.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/providers/Microsoft.Storage/checkNameAvailability')
-            .yields(null, {statusCode: 200}, {
-                                               message: 'The storage account named test031702-sa is invalid.',
-                                               nameAvailable: false,
-                                               reason: 'AccountNameInvalid'
-                                             });
+          sinon.stub(storageClient, 'provision').yields({
+            statusCode: 400,
+          });
         });
 
         after(function() {
-          mockingHelper.restore();
+          storageClient.provision.restore();
         });
 
         it('should create the storage', function(done) {

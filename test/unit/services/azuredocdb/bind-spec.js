@@ -8,12 +8,8 @@ var sinon = require('sinon');
 var cmdBind = require('../../../../lib/services/azuredocdb/cmd-bind');
 var docDbClient = require('../../../../lib/services/azuredocdb/client');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'DocumentDb-Tests');
-
-var originPost = msRestRequest.POST;
-docDbClient.initialize(azure, log);
 
 describe('DocumentDb - Bind', function() {
   var validParams;
@@ -27,13 +23,11 @@ describe('DocumentDb - Bind', function() {
     
   describe('When account key is retrieved from Azure successfully', function() {
     before(function() {
-      msRestRequest.POST = sinon.stub();
-      msRestRequest.POST.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourcegroups/myRG/providers/Microsoft.DocumentDB/databaseAccounts/myaccount/listKeys')
-        .yields(null, {statusCode: 200}, '{"primaryMasterKey":"fake-master-key"}');
+      sinon.stub(docDbClient, 'getAccountKey').yields(null, 'fake-master-key');
     });
       
     after(function() {
-      msRestRequest.POST = originPost;
+      docDbClient.getAccountKey.restore();
     });
     
     it('should return credentials', function(done) {
@@ -48,13 +42,11 @@ describe('DocumentDb - Bind', function() {
 
   describe('When account key can not be retrieved from Azure', function() {
     before(function() {
-      msRestRequest.POST = sinon.stub();
-      msRestRequest.POST.withArgs('https://management.azure.com/subscriptions/55555555-4444-3333-2222-111111111111/resourcegroups/myRG/providers/Microsoft.DocumentDB/databaseAccounts/myaccount/listKeys')
-        .yields(null, {statusCode: 500});
+      sinon.stub(docDbClient, 'getAccountKey').yields(new Error());
     });
       
     after(function() {
-      msRestRequest.POST = originPost;
+      docDbClient.getAccountKey.restore();
     });
     
     it('should get an error and do not return credentials', function(done) {

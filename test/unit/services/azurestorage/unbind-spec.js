@@ -12,6 +12,7 @@ var should = require('should');
 var sinon = require('sinon');
 var common = require('../../../../lib/common');
 var azurestorage = require('../../../../lib/services/azurestorage/');
+var storageClient = require('../../../../lib/services/azurestorage/storageclient');
 var azure = require('../helpers').azure;
 
 var log = logule.init(module, 'Storage-Mocha');
@@ -19,6 +20,10 @@ var log = logule.init(module, 'Storage-Mocha');
 describe('Storage', function() {
 
   describe('Unbinding', function() {
+
+    before(function() {
+      storageClient.init = sinon.stub();
+    });
 
     describe('When no error is thrown', function() {
       var sandbox;

@@ -12,17 +12,18 @@ var should = require('should');
 var sinon = require('sinon');
 var common = require('../../../../lib/common');
 var azureservicebus = require('../../../../lib/services/azureservicebus/');
+var utils = require('../../../../lib/services/azureservicebus/utils');
 var azure = require('../helpers').azure;
-var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'ServiceBus-Mocha');
-
-var mockingHelper = require('../mockingHelper');
-mockingHelper.backup();
 
 describe('ServiceBus', function() {
 
   describe('Provisioning', function() {
+
+    before(function() {
+      utils.init = sinon.stub();
+    });
 
     describe('When no specific parameters are provided', function() {
       var validParams = {};
@@ -32,11 +33,20 @@ describe('ServiceBus', function() {
           instance_id: 'e77a25d2-f58c-11e5-b933-000d3a80e5f5',
           azure: azure,
         };
+        sinon.stub(utils, 'checkNamespaceAvailability').yields(null);
+        sinon.stub(utils, 'createResourceGroup').yields(null);
+        sinon.stub(utils, 'createNamespace').yields(null, 'cloud-foundry-e77a25d2-f58c-11e5-b933-000d3a80e5f5', 'cfe77a25d2-f58c-11e5-b933-000d3a80e5f5');
+      });
+
+      after(function() {
+        utils.checkNamespaceAvailability.restore();
+        utils.createResourceGroup.restore();
+        utils.createNamespace.restore();
       });
 
       it('should return missing parameter error', function(done) {
-        azureservicebus.provision(log, validParams, function(err, reply, result) {
-          should.exist(err);
+        azureservicebus.provision(log, validParams, function(
+          err, reply, result) {
           err.should.have.property('description', 'The parameters ["resource_group_name","namespace_name","location","type","messaging_tier"] are missing.');
           done();
         });
@@ -57,6 +67,15 @@ describe('ServiceBus', function() {
             messaging_tier: 'Standard'
           }
         };
+        sinon.stub(utils, 'checkNamespaceAvailability').yields(null);
+        sinon.stub(utils, 'createResourceGroup').yields(null);
+        sinon.stub(utils, 'createNamespace').yields(null, 'mysbtest', 'mysb');
+      });
+
+      after(function() {
+        utils.checkNamespaceAvailability.restore();
+        utils.createResourceGroup.restore();
+        utils.createNamespace.restore();
       });
 
       it('should return missing parameter error', function(done) {
@@ -86,23 +105,17 @@ describe('ServiceBus', function() {
             }
           }
         };
-        
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/mysbtest/providers/Microsoft.ServiceBus/namespaces/mysb')
-          .yields(null, {statusCode: 404});
-          
-        msRestRequest.PUT = sinon.stub();
-        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/mysbtest')
-          .yields(null, {statusCode: 200});
-          
-        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/mysbtest/providers/Microsoft.ServiceBus/namespaces/mysb')
-          .yields(null, {statusCode: 200});
+        sinon.stub(utils, 'checkNamespaceAvailability').yields(null);
+        sinon.stub(utils, 'createResourceGroup').yields(null);
+        sinon.stub(utils, 'createNamespace').yields(null, 'mysbtest', 'mysb');
       });
 
-      after(function () {
-        mockingHelper.restore();
+      after(function() {
+        utils.checkNamespaceAvailability.restore();
+        utils.createResourceGroup.restore();
+        utils.createNamespace.restore();
       });
-    
+
       it('should create the namespace', function(done) {
         azureservicebus.provision(log, validParams, function(
           err, reply, result) {
