@@ -14,9 +14,13 @@ var sinon = require('sinon');
 var cmdDeprovision = require('../../../../lib/services/azuresqldb/cmd-deprovision');
 var sqldbOperations = require('../../../../lib/services/azuresqldb/client');
 var azure = require('../helpers').azure;
+var msRestRequest = require('../../../../lib/common/msRestRequest');
 
 var log = logule.init(module, 'SqlDb-Mocha');
 var sqldbOps = new sqldbOperations(log, azure);
+
+var mockingHelper = require('../mockingHelper');
+mockingHelper.backup();
 
 describe('SqlDb - Deprovision', function () {
 
@@ -35,16 +39,18 @@ describe('SqlDb - Deprovision', function () {
         };
 
         cd = new cmdDeprovision(log, validParams);
-
+        
+        msRestRequest.DELETE = sinon.stub();
+        msRestRequest.DELETE.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/golive4')
+          .yields(null, {statusCode: 200});
     });
 
     after(function () {
-        sqldbOps.deleteServer.restore();
+        mockingHelper.restore();
     });
 
     describe('Deprovision should return 200 ...', function () {
         it('returns 200 if no err', function (done) {
-            sinon.stub(sqldbOps, 'deleteServer').yields(null);
             cd.deprovision(sqldbOps, function (err, result) {
                 should.not.exist(err);
                 result.state.should.equal('succeeded');
