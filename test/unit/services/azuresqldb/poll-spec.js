@@ -180,33 +180,6 @@ describe('SqlDb - Poll - polling database after creation is complete', function 
     });
 });
 
-/*  fill in this one when I can catch azure being slow enough
-describe('SqlDb - Poll - polling database immediately after de-provision is started', function () {
-
-    var cp;
-
-    before(function () {
-        cp = new cmdPoll(log, afterDeprovisionValidParams);
-    });
-
-    after(function () {
-        sqldbOps.getToken.restore();
-        sqldbOps.getDatabase.restore();
-    });
-
-    describe('Poll should return xxx immediately after starting to de-provision a database', function () {
-        it('should work', function (done) {
-            sinon.stub(sqldbOps, 'getToken').yields(null, accessToken);
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, sqldbOpsGetDatabaseResult);
-            cp.poll(sqldbOps, function (err, result) {
-                should.not.exist(err);
-                done();
-            });
-        });
-    });
-});
-*/
-
 describe('SqlDb - Poll - polling database after de-provision is complete', function () {
 
     var cp;
@@ -223,7 +196,7 @@ describe('SqlDb - Poll - polling database after de-provision is complete', funct
     before(function () {
         cp = new cmdPoll(log, afterDeprovisionValidParams);
         msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/golive4')
+        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/golive4/databases/sqldb')
           .yields(null, {statusCode: 404});
     });
 
@@ -233,7 +206,6 @@ describe('SqlDb - Poll - polling database after de-provision is complete', funct
 
     describe('Poll should return 200 after de-provisioning is complete', function () {
         it('should correctly interpret 404 as database is deleted', function (done) {
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, sqldbOpsGetDatabaseResult);
             cp.poll(sqldbOps, function (err, result) {
                 should.not.exist(err);
                 result.value.state.should.equal('succeeded');

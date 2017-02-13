@@ -33,19 +33,19 @@ describe('SqlDb - Provision - PreConditions', function () {
                 instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
                 plan_id: "3819fdfa-0aaa-11e6-86f4-000d3a002ed5",
                 parameters: {      // developer's input parameters file
-                    resourceGroup: 'sqldbResourceGroup',
-                    sqlServerName: 'azureuser',
+                    resourceGroup: 'fake-resource-group-name',
+                    sqlServerName: 'fake-server-name',
                     sqlServerParameters: {
                         location: 'westus',
                         properties: {
-                            administratorLogin: 'azureuser',
+                            administratorLogin: 'fake-server-name',
                             administratorLoginPassword: 'c1oudc0w'
                         },
                         tags: {
                             foo: 'bar'
                         }
                     },
-                    sqldbName: 'azureuserSqlDb',
+                    sqldbName: 'fake-db-name',
                     sqldbParameters: {
                         properties: {
                             collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -79,20 +79,20 @@ describe('SqlDb - Provision - PreConditions', function () {
                 instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
                 plan_id: "3819fdfa-0aaa-11e6-86f4-000d3a002ed5",
                 parameters: {      // developer's input parameters file
-                    resourceGroup: 'sqldbResourceGroup',
-                    sqlServerName: 'azureuser',
+                    resourceGroup: 'fake-resource-group-name',
+                    sqlServerName: 'fake-server-name',
                     sqlServerCreateIfNotExist: true,
                     sqlServerParameters: {
                         location: 'westus',
                         properties: {
-                            administratorLogin: 'azureuser',
+                            administratorLogin: 'fake-server-name',
                             administratorLoginPassword: 'c1oudc0w'
                         },
                         tags: {
                             foo: 'bar'
                         }
                     },
-                    sqldbName: 'azureuserSqlDb',
+                    sqldbName: 'fake-db-name',
                     sqldbParameters: {
                         properties: {
                             collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -164,7 +164,7 @@ describe('SqlDb - Provision - Execution (allow to create server)', function () {
                     }],
                     location: 'westus',
                     properties: {
-                        administratorLogin: 'azureuser',
+                        administratorLogin: 'fake-server-name',
                         administratorLoginPassword: 'c1oudc0w'
                     }
                 },
@@ -188,49 +188,36 @@ describe('SqlDb - Provision - Execution (allow to create server)', function () {
         cp.fixupParameters();
         
         msRestRequest.PUT = sinon.stub();
-        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup')
-          .yields(null, {statusCode: 200});  
-
         msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser')
-          .yields(null, {statusCode: 404});
         
-        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser')
-          .yields(null, {statusCode: 201});        
+        // create resource group
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name')
+            .yields(null, {statusCode: 200});  
         
-        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser/firewallRules/newrule')
-          .yields(null, {statusCode: 200});
+        // create server
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name')
+            .yields(null, {statusCode: 201}, {properties: {fullyQualifiedDomainName: 'fake-fqdn'}});
         
-        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser/databases/azureuserSqlDb')
-          .yields(null, {statusCode: 202});
+        // create firewall rule
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name/firewallRules/newrule')
+            .yields(null, {statusCode: 200});
+        
+        // create db
+        msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name/databases/fake-db-name')
+            .yields(null, {statusCode: 202}, {});
     });
 
+    after(function () {
+        mockingHelper.restore();
+    });
+        
     describe('Server & Database that does not previously exist', function() {
 
         before(function () {
-            sinon.stub(sqldbOps, 'createResourceGroup').yields(null, { provisioningState: 'Succeeded' });
-            sinon.stub(sqldbOps, 'getServer').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-            sinon.stub(sqldbOps, 'createServer').yields(null, {
-                statusCode: HttpStatus.OK,
-                body: {
-                    properties: {
-                        fullyQualifiedDomainName: 'fake-fqdn'
-                    }
-                }
-            });
-            sinon.stub(sqldbOps, 'createFirewallRule').yields(null, { statusCode: HttpStatus.OK });
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-            sinon.stub(sqldbOps, 'createDatabase').yields(null, {body: {}});
-        });
-    
-        after(function () {
-            mockingHelper.restore();
-            sqldbOps.createResourceGroup.restore();
-            sqldbOps.getServer.restore();
-            sqldbOps.createServer.restore();
-            sqldbOps.createFirewallRule.restore();
-            sqldbOps.getDatabase.restore();
-            sqldbOps.createDatabase.restore();
+          msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name')
+              .yields(null, {statusCode: 404});
+          msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name/databases/fake-db-name')
+              .yields(null, {statusCode: 404});
         });
     
         it('should not callback error', function (done) {
@@ -248,23 +235,13 @@ describe('SqlDb - Provision - Execution (allow to create server)', function () {
     describe('Sql server exists, but sql database does not exist', function () {
     
         before(function () {
-            sinon.stub(sqldbOps, 'createResourceGroup').yields(null, { provisioningState: 'Succeeded' });
-            sinon.stub(sqldbOps, 'getServer').yields(null, {
-                statusCode: HttpStatus.OK,
-                body: '{"properties": { "fullyQualifiedDomainName": "fake-fqdn"}}'
-            });
-            sinon.stub(sqldbOps, 'createFirewallRule').yields(null, { statusCode: HttpStatus.OK });
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-            sinon.stub(sqldbOps, 'createDatabase').yields(null, {body: {}});
-        });
-    
-        after(function () {
-            mockingHelper.restore();
-            sqldbOps.createResourceGroup.restore();
-            sqldbOps.getServer.restore();
-            sqldbOps.createFirewallRule.restore();
-            sqldbOps.getDatabase.restore();
-            sqldbOps.createDatabase.restore();
+          msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name')
+              .yields(null,
+                    {statusCode: HttpStatus.OK},
+                    '{"properties": { "fullyQualifiedDomainName": "fake-fqdn"}}'
+                );
+          msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name/databases/fake-db-name')
+              .yields(null, {statusCode: 404});
         });
     
         it('should not callback error', function (done) {
@@ -310,7 +287,7 @@ describe('SqlDb - Provision - Execution (not allow to create server)', function 
             accountPool:{
                 'sqldb': {
                     'fake-server-name': {
-                        administratorLogin: 'azureuser',
+                        administratorLogin: 'fake-server-name',
                         administratorLoginPassword: 'c1oudc0w'
                     }
                 }
@@ -320,20 +297,19 @@ describe('SqlDb - Provision - Execution (not allow to create server)', function 
         cp = new cmdProvision(log, params);
         cp.fixupParameters();
         
-        msRestRequest.GET = sinon.stub();
-        msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/sqldbResourceGroup/providers/Microsoft.Sql/servers/azureuser')
-          .yields(null, {statusCode: 200});
+        msRestRequest.PUT = sinon.stub();
+    });
+    
+    after(function () {
+        mockingHelper.restore();
     });
 
     describe('Server & Database that does not previously exist', function() {
 
         before(function () {
-            sinon.stub(sqldbOps, 'getServer').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-        });
-    
-        after(function () {
-            mockingHelper.restore();
-            sqldbOps.getServer.restore();
+            msRestRequest.GET = sinon.stub();
+            msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name')
+                .yields(null, {statusCode: 404});
         });
     
         it('should callback error that server not exist', function (done) {
@@ -348,18 +324,16 @@ describe('SqlDb - Provision - Execution (not allow to create server)', function 
     describe('Sql server exists, but sql database does not exist', function () {
     
         before(function () {
-            sinon.stub(sqldbOps, 'getServer').yields(null, {
-                statusCode: HttpStatus.OK,
-                body: '{"properties": { "fullyQualifiedDomainName": "fake-fqdn"}}'
-            });
-            sinon.stub(sqldbOps, 'getDatabase').yields(null, { statusCode: HttpStatus.NOT_FOUND });
-            sinon.stub(sqldbOps, 'createDatabase').yields(null, {body: {}});
-        });
-    
-        after(function () {
-            sqldbOps.getServer.restore();
-            sqldbOps.getDatabase.restore();
-            sqldbOps.createDatabase.restore();
+            msRestRequest.GET = sinon.stub();
+            msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name')
+                .yields(null,
+                        {statusCode: HttpStatus.OK},
+                        '{"properties": { "fullyQualifiedDomainName": "fake-fqdn"}}'
+                );
+            msRestRequest.GET.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name/databases/fake-db-name')
+                .yields(null, {statusCode: 404});
+            msRestRequest.PUT.withArgs('https://management.azure.com//subscriptions/55555555-4444-3333-2222-111111111111/resourceGroups/fake-resource-group-name/providers/Microsoft.Sql/servers/fake-server-name/databases/fake-db-name')
+                .yields(null, {statusCode: 202}, {});
         });
     
         it('should not callback error', function (done) {
@@ -388,8 +362,8 @@ describe('SqlDb - Provision - Firewall rules', function () {
                 instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
                 plan_id: "3819fdfa-0aaa-11e6-86f4-000d3a002ed5",
                 parameters: {      // developer's input parameters file
-                    resourceGroup: 'sqldbResourceGroup',
-                    sqlServerName: 'azureuser',
+                    resourceGroup: 'fake-resource-group-name',
+                    sqlServerName: 'fake-server-name',
                     sqlServerParameters: {
                         allowSqlServerFirewallRules: [{
                             ruleName: 'newrule',
@@ -398,11 +372,11 @@ describe('SqlDb - Provision - Firewall rules', function () {
                         }],
                         location: 'westus',
                         properties: {
-                            administratorLogin: 'azureuser',
+                            administratorLogin: 'fake-server-name',
                             administratorLoginPassword: 'c1oudc0w'
                         }
                     },
-                    sqldbName: 'azureuserSqlDb',
+                    sqldbName: 'fake-db-name',
                     sqldbParameters: {
                         properties: {
                             collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -427,23 +401,23 @@ describe('SqlDb - Provision - Firewall rules', function () {
             done();
         });
     });
-
+    
     describe('Incorrect firewall rule specs are given', function () {
         before(function () {
             params = {
                 instance_id: 'e2778b98-0b6b-11e6-9db3-000d3a002ed5',
                 plan_id: "3819fdfa-0aaa-11e6-86f4-000d3a002ed5",
                 parameters: {      // developer's input parameters file
-                    resourceGroup: 'sqldbResourceGroup',
-                    sqlServerName: 'azureuser',
+                    resourceGroup: 'fake-resource-group-name',
+                    sqlServerName: 'fake-server-name',
                     sqlServerParameters: {
                         location: 'westus',
                         properties: {
-                            administratorLogin: 'azureuser',
+                            administratorLogin: 'fake-server-name',
                             administratorLoginPassword: 'c1oudc0w'
                         }
                     },
-                    sqldbName: 'azureuserSqlDb',
+                    sqldbName: 'fake-db-name',
                     sqldbParameters: {
                         properties: {
                             collation: 'SQL_Latin1_General_CP1_CI_AS'
