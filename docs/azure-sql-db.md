@@ -4,11 +4,15 @@
 
 ## Behaviors
 
-### Provision
+### Provisio 
   
-  1. If the server doesn't exist, create a SQL Server.
+  1. If the server doesn't exist and it is allowed to create a new one, create a SQL Server.
   
   2. Create a database.
+  
+**NOTE:**
+  
+  * The priviledge to create new server can be set in broker manifest.
   
 ### Provision-Poll
   
@@ -16,32 +20,35 @@
   
 ### Bind
 
-  1. Try to login to the master database of the server to create a new Login. If succeeded then go to 3, else go to 2.
+  1. Login to the master database, create Login with generated name and password (ensure it follows the strong password policy).
   
-  2. Add a temporary firwall rule to allow service broker to access the server.
+  2. Login to the newly created database, create a new user for the Login with the name.
   
-  3. Try to login to the new-created database of the server to create a new user for the Login with the name.
+  3. Login to the newly created database, grant permission "CONTROL" to the user.
   
-  4. Grant permission "CONTROL" to the user.
+  4. Collect [credentials](./azure-sql-db.md#format-of-credential).
   
-  5. Delete the temporary firewall rule.
+**NOTE:**
   
-  6. Collect credentials.
+  * A temporary firewall rule will be created to allow service broker to access the server if some login was refused by firewall. And it will be deleted after the last login.
   
-  ** NOTE **: The firewall rule needs to be deleted manually if Bind fails. The rule name should be 'broker-temp-rule-<sqldbName>'.
-  ** NOTE **: Permission "CONTROL" in a database: https://msdn.microsoft.com/en-us/library/ms178569.aspx
+  * Maybe the temporary firewall rule needs o be deleted manually if Bind fails. The rule name is 'broker-temp-rule-\<sqldbName>'.
+  
+  * The concepts of Login and User in SQL server: https://msdn.microsoft.com/en-us/library/aa337562.aspx
+  
+  * Permission "CONTROL" in a database: https://msdn.microsoft.com/en-us/library/ms178569.aspx
   
 ### Unbind
 
-  1. Try to login to the new-created database of the server to drop the user for the Login. If succeeded then go to 3, else go to 2.
+  1. Login to the newly created database, drop the user for the Login.
   
-  2. Add a temporary firwall rule to allow service broker to access the server.
+  2. Login to the master database of the server, drop the Login.
   
-  3. Try to login to the master database of the server to drop the Login.
+**NOTE**:
+
+  * A temporary firewall rule will be created to allow service broker to access the server if some login was refused by firewall. And it will be deleted after the last login.
   
-  4. Delete the temporary firewall rule.
-  
-  ** NOTE **: The firewall rule needs to be deleted manually if Unbind fails. The rule name should be 'broker-temp-rule-<sqldbName>'.
+  * Maybe the temporary firewall rule needs to be deleted manually if Unbind fails. The rule name is 'broker-temp-rule-\<sqldbName>'.
   
 ### Deprovision
 
@@ -87,10 +94,10 @@
     "resourceGroup": "<resource-group>",        // [Required] Unique. Only allow up to 90 characters
     "location": "<azure-region-name>",          // [Required] e.g. eastasia, eastus2, westus, etc. You can use azure cli command 'azure location list' to list all locations.
     "sqlServerName": "<sql-server-name>",       // [Required] Unique. sqlServerName cannot be empty or null. It can contain only lowercase letters, numbers and '-', but can't start or end with '-' or have more than 63 characters. 
-    "sqlServerParameters": {                    // Remove this block if using existing server
+    "sqlServerParameters": {                    // Ignore this block if using existing server
         "allowSqlServerFirewallRules": [        // [Optional] If present, ruleName, startIpAddress and endIpAddress are mandatory in every rule.
             {
-                "ruleName": "<rule-name-1>",
+                "ruleName": "<rule-name-0>",
                 "startIpAddress": "xx.xx.xx.xx",
                 "endIpAddress": "xx.xx.xx.xx"
             },
