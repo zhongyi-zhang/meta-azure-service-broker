@@ -26,7 +26,7 @@
   
   3. Login to the newly created database, grant permission "CONTROL" to the user.
   
-  4. Collect [credentials](./azure-sql-db.md#format-of-credential).
+  4. Collect [credentials](./azure-sql-db.md#format-of-credentials).
   
 **NOTE:**
   
