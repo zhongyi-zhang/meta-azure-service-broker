@@ -4,15 +4,15 @@
 
 ## Behaviors
 
-### Provisio 
+### Provision
   
-  1. If the server doesn't exist and it is allowed to create a new one, create a SQL Server.
+  1. If the server dose not exist, and the operator allows the service broker to create a new server (specified in the service broker manifest file), then create the SQL server.
   
   2. Create a database.
   
 **NOTE:**
   
-  * The priviledge to create new server can be set in broker manifest.
+  * The operator can enable and disable the option for SQL service broker to create new server, in the meta service broker manifest file, see the "Modules related configurations" section in [[https://github.com/Azure/meta-azure-service-broker/blob/master/docs/how-admin-deploy-the-broker.md](https://github.com/Azure/meta-azure-service-broker/blob/master/docs/how-admin-deploy-the-broker.md)]([https://github.com/Azure/meta-azure-service-broker/blob/master/docs/how-admin-deploy-the-broker.md](https://github.com/Azure/meta-azure-service-broker/blob/master/docs/how-admin-deploy-the-broker.md)) for details.
   
 ### Provision-Poll
   
@@ -20,23 +20,23 @@
   
 ### Bind
 
-  1. Login to the master database, create Login with generated name and password (ensure it follows the strong password policy).
+  1. Login to the master database, create Login with generated name and password by following SQL server password policy.
   
   2. Login to the newly created database, create a new user for the Login with the name.
   
   3. Login to the newly created database, grant permission "CONTROL" to the user.
   
-  4. Collect [credentials](./azure-sql-db.md#format-of-credentials).
+  4. Collect [credentials](./azure-sql-db.md#format-of-credentials).
   
 **NOTE:**
   
   * A temporary firewall rule will be created to allow service broker to access the server if some login was refused by firewall. And it will be deleted after the last login.
   
-  * Maybe the temporary firewall rule needs o be deleted manually if Bind fails. The rule name is 'broker-temp-rule-\<sqldbName>'.
+  * Maybe the temporary firewall rule needs to be deleted manually if Bind fails. The rule name is 'broker-temp-rule-\<sqldbName>'.
   
   * The concepts of Login and User in SQL server: https://msdn.microsoft.com/en-us/library/aa337562.aspx
   
-  * Permission "CONTROL" in a database: https://msdn.microsoft.com/en-us/library/ms178569.aspx
+  * Permission "CONTROL" has full permissions in a database: https://msdn.microsoft.com/en-us/library/ms178569.aspx
   
 ### Unbind
 
