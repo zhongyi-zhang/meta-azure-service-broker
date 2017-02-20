@@ -231,6 +231,22 @@ var lifecycle = function(service) {
         );
       });
   
+      it('should call cleaner in the last', function(done) {
+        var cleanerExists = true;
+        var cleaner;
+        try {
+          cleaner = require('./cleaner/' + serviceName);
+        } catch(e) {
+          cleanerExists = false;
+        }
+        
+        if (!cleanerExists) { 
+          console.log('No cleaner need to call.');
+          return done();
+        }
+        
+        cleaner.clean(provisioningParameters);
+      });
     });
   
   });
