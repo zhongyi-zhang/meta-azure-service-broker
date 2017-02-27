@@ -18,6 +18,8 @@
   
   1. Check whether creating database succeeds or not.
   
+  2. Enable [Transparent Data Encryption](https://msdn.microsoft.com/en-us/library/dn948096.aspx) if it is turned on in the configuration.
+  
 ### Bind
 
   1. Login to the master database, create Login with generated name and password by following SQL server password policy.
@@ -113,6 +115,7 @@
         }
     },
     "sqldbName": "<sql-database-name>",                         // [Required] Not more than 128 characters. Can't end with '.' or ' ', can't contain '<,>,*,%,&,:,\,/,?' or control characters.
+    "transparentDataEncryption": true | false,                  // Enable Transparent Data Encryption on the database. Defaults to false.
     "sqldbParameters": {                                        // If you want to set more child parameters, see details here: https://msdn.microsoft.com/en-us/library/azure/mt163685.aspx
         "properties": {
             "collation": "SQL_Latin1_General_CP1_CI_AS | <or-other-valid-sqldb-collation>"
@@ -153,6 +156,7 @@
         }
     },
     "sqldbName": "sqlDbA",
+    "transparentDataEncryption": true,
     "sqldbParameters": {
         "properties": {
             "collation": "SQL_Latin1_General_CP1_CI_AS"
