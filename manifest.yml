@@ -36,3 +36,21 @@ applications:
         "administratorLoginPassword": "REPLACE-ME"
       }
     ]'
+    
+    AZURE_MYSQLDB_ALLOW_TO_CREATE_MYSQL_SERVER: true | false
+    AZURE_MYSQLDB_MYSQL_SERVER_POOL: '[
+      {
+        "resourceGroup": "REPLACE-ME",
+        "location": "REPLACE-ME",
+        "mysqlServerName": "REPLACE-ME",
+        "administratorLogin": "REPLACE-ME",
+        "administratorLoginPassword": "REPLACE-ME"
+      },
+      {
+        "resourceGroup": "REPLACE-ME",
+        "location": "REPLACE-ME",
+        "mysqlServerName": "REPLACE-ME",
+        "administratorLogin": "REPLACE-ME",
+        "administratorLoginPassword": "REPLACE-ME"
+      }
+    ]'

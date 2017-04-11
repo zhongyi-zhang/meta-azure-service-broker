@@ -65,10 +65,14 @@ describe('Util', function() {
         'privilege': {
           'sqldb': {
             'allowToCreateSqlServer': true
+          },
+          'mysqldb': {
+            'allowToCreateMysqlServer': true
           }
         },
         'accountPool': {
-          'sqldb': {}
+          'sqldb': {},
+          'mysqldb': {}
         },
         'defaultSettings': {
           'sqldb': {
@@ -84,6 +88,13 @@ describe('Util', function() {
           });
           delete process.env['AZURE_SQLDB_ALLOW_TO_CREATE_SQL_SERVER'];
           delete process.env['AZURE_SQLDB_SQL_SERVER_POOL'];
+          delete process.env['AZURE_MYSQLDB_ALLOW_TO_CREATE_MYSQL_SERVER'];
+          delete process.env['AZURE_MYSQLDB_MYSQL_SERVER_POOL'];
+          
+          expectedConfig['accountPool']['sqldb'] = {};
+          expectedConfig['privilege']['sqldb']['allowToCreateSqlServer'] = true;
+          expectedConfig['accountPool']['mysqldb'] = {};
+          expectedConfig['privilege']['mysqldb']['allowToCreateMysqlServer'] = true;
         });
 
         after(function() {
@@ -117,9 +128,41 @@ describe('Util', function() {
               "administratorLoginPassword": "fake-pwd1" \
             } \
           ]';
+          process.env['AZURE_MYSQLDB_ALLOW_TO_CREATE_MYSQL_SERVER'] = 'true';
+          process.env['AZURE_MYSQLDB_MYSQL_SERVER_POOL'] = '[ \
+            { \
+              "resourceGroup": "fake-group", \
+              "location": "fake-location", \
+              "mysqlServerName": "fake-server0", \
+              "administratorLogin": "fake-login0", \
+              "administratorLoginPassword": "fake-pwd0" \
+            }, \
+            { \
+              "resourceGroup": "fake-group", \
+              "location": "fake-location", \
+              "mysqlServerName": "fake-server1", \
+              "administratorLogin": "fake-login1", \
+              "administratorLoginPassword": "fake-pwd1" \
+            } \
+          ]';
         
           expectedConfig['privilege']['sqldb']['allowToCreateSqlServer'] = true;
           expectedConfig['accountPool']['sqldb'] = {
+            'fake-server0': {
+              'resourceGroup': 'fake-group',
+              'location': 'fake-location',
+              'administratorLogin': 'fake-login0',
+              'administratorLoginPassword': 'fake-pwd0'
+            },
+            'fake-server1': {
+              'resourceGroup': 'fake-group',
+              'location': 'fake-location',
+              'administratorLogin': 'fake-login1',
+              'administratorLoginPassword': 'fake-pwd1'
+            }
+          };
+          expectedConfig['privilege']['mysqldb']['allowToCreateMysqlServer'] = true;
+          expectedConfig['accountPool']['mysqldb'] = {
             'fake-server0': {
               'resourceGroup': 'fake-group',
               'location': 'fake-location',

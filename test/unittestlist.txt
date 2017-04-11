@@ -29,3 +29,9 @@ unit/services/azuresqldb/deprovision-spec.js
 unit/services/azuresqldb/poll-spec.js
 unit/services/azuresqldb/bind-spec.js
 unit/services/azuresqldb/unbind-spec.js
+
+unit/services/azuremysqldb/provision-spec.js
+unit/services/azuremysqldb/deprovision-spec.js
+unit/services/azuremysqldb/poll-spec.js
+unit/services/azuremysqldb/bind-spec.js
+unit/services/azuremysqldb/unbind-spec.js

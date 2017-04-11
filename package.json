@@ -36,7 +36,8 @@
     "semver": "5.1.0",
     "string": "3.3.1",
     "underscore": "1.8.3",
-    "uuid": "3.0.1"
+    "uuid": "3.0.1",
+    "mysql2": "1.2.0"
   },
   "devDependencies": {
     "azure": "0.10.6",

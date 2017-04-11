@@ -14,6 +14,7 @@ if (!_.has(supportedEnvironments, environment)) {
   throw new Error(util.format('The test does not support %s', environment));
 }
 
+//sqldb
 var sqlServerName, sqldbName, azuresqldb, administratorLogin, administratorLoginPassword;
 
 var servers = common.getConfigurations().accountPool.sqldb;
@@ -64,5 +65,47 @@ azuresqldb = {
   e2e: true
 };
 testMatrix.push(azuresqldb);
+
+// mysqldb
+var mysqlServerName, mysqldbName, azuremysqldb, administratorLogin, administratorLoginPassword;
+
+var servers = common.getConfigurations().accountPool.mysqldb;
+for (var server in servers) {
+  if (servers.hasOwnProperty(server)) {
+    mysqlServerName = server;
+    administratorLogin = servers[server]['administratorLogin'];
+    administratorLoginPassword = servers[server]['administratorLoginPassword'];
+  }
+}
+
+instanceId = uuid.v4();
+bindingId = uuid.v4();
+mysqldbName = 'cf' + instanceId;
+azuremysqldb = {
+  serviceName: 'azure-mysqldb',
+  serviceId: 'e40b3635-01bc-4262-b2c5-0847bd7ab43b',
+  planId: 'd8d5cac9-d975-48ea-9ac4-8232f92bcb93',
+  instanceId: instanceId,
+  bindingId: bindingId,
+  provisioningParameters: {
+    'mysqlServerName': mysqlServerName,
+    'mysqldbName': mysqldbName
+  },
+  envProvisioningParameters: {
+    administratorLogin: administratorLogin,
+    administratorLoginPassword: administratorLoginPassword
+  },
+  bindingParameters: {},
+  credentials: {
+    'databaseLogin': '<string>',
+    'databaseLoginPassword': '<string>',
+    'mysqlServerName': mysqlServerName,
+    'mysqlServerFullyQualifiedDomainName': '<string>',
+    'mysqldbName': mysqldbName,
+    'jdbcUrl': '<string>'
+  },
+  e2e: true
+};
+testMatrix.push(azuremysqldb);
 
 module.exports = testMatrix;

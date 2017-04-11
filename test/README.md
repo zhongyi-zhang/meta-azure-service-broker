@@ -74,11 +74,22 @@ If you want to run the cases in a specific file, you can use `../node_modules/mo
     export AZURE_BROKER_DATABASE_NAME="<database-name>"
     ```
   
-  4. Export the SQL database module related environment variables. A valid Azure SQL Server is needed in `AZURE_SQLDB_SQL_SERVER_POOL`.
+  4. Export the SQL database module related environment variables. A valid Azure SQL Server is needed in `AZURE_SQLDB_SQL_SERVER_POOL`. It is the same to `AZURE_MYSQLDB_MYSQL_SERVER_POOL`.
     
     ```
     export AZURE_SQLDB_ALLOW_TO_CREATE_SQL_SERVER="true"
     export AZURE_SQLDB_SQL_SERVER_POOL='[
+      {
+        "resourceGroup": "REPLACE-ME",
+        "location": "REPLACE-ME",
+        "sqlServerName": "REPLACE-ME",
+        "administratorLogin": "REPLACE-ME",
+        "administratorLoginPassword": "REPLACE-ME"
+      }
+    ]'
+    
+    export AZURE_MYSQLDB_ALLOW_TO_CREATE_MYSQL_SERVER="true"
+    export AZURE_MYSQLDB_MYSQL_SERVER_POOL='[
       {
         "resourceGroup": "REPLACE-ME",
         "location": "REPLACE-ME",
