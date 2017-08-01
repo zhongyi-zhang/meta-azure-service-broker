@@ -24,7 +24,7 @@
             "administratorLoginPassword": "<server-admin-password>"
         }
     },
-    "mysqlDatabaseName": "<database-name>"      // [Required] Unique. Database name cannot be empty or null. It can contain only lowercase letters, numbers and '-', but can't start or end with '-' or have more than 63 characters. 
+    "mysqlDatabaseName": "<database-name>"      // [Required]
 }
 */
 
